@@ -1,0 +1,26 @@
+{
+  "name": "SalesMgmt",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@sap/cds": "^10"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^3"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds-watch"
+  },
+  "private": true,
+  "cds":{
+    "requires":{
+      "db":{
+        "kind":"sqlite",
+        "credentials": {
+          "url": "db.sqlite"
+        }
+      }
+    }
+  }
+}
