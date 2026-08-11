@@ -3,23 +3,33 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@sap/cds": "^10"
+    "@sap/cds": "^10",
+    "@sap-cloud-sdk/connectivity": "^4",
+    "@sap-cloud-sdk/http-client": "^4",
+    "@sap-cloud-sdk/resilience": "^4"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^3"
   },
   "scripts": {
     "start": "cds-serve",
-    "watch": "cds-watch"
+    "watch": "cds watch"
   },
   "private": true,
-  "cds":{
-    "requires":{
-      "db":{
-        "kind":"sqlite",
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite",
         "credentials": {
           "url": "db.sqlite"
         }
+      },
+      "Northwind": {
+        "kind": "odata-v2",
+        "credentials":{
+          "url": "https://services.odata.org/v2/northwind/northwind.svc/"
+        },
+        "model": "srv/external/Northwind"
       }
     }
   }
