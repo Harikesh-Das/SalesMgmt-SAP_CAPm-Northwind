@@ -1,0 +1,53 @@
+{
+    "xsappname": "sales-management",
+    "tennant-mode": "dedicated",
+    "scopes": [
+        {
+            "name": "$XSAPPNAME.SalesUser",
+            "description": "The sales user"
+        },
+        {
+            "name": "$XSAPPNAME.SalesManager",
+            "description": "The sales manager"
+        },
+        {
+            "name": "$XSAPPNAME.SalesAdmin",
+            "description": "The sales admin"
+        }
+    ],
+    "role-templates": [
+        {
+            "name": "SalesUser",
+            "description": "The sales user",
+            "scopes-references": [
+                "$XSAPPNAME.SalesUser"
+            ]
+        },
+        {
+            "name": "SalesManager",
+            "description": "The sales Manager",
+            "scope-references": [
+                "$XSAPPNAME.SalesUser",
+                "$XSAPPNAME.SalesManager"
+            ]
+        },
+        {
+            "name": "SalesAdmin",
+            "description": "The sales Admin",
+            "scope-references": [
+                "$XSAPPNAME.SalesUser",
+                "$XSAPPNAME.SalesManager",
+                "$XSAPPNAME.SalesAdmin"
+            ]
+        },
+        {
+            "name": "AuthenticatedUser",
+            "description": "authenticate users",
+            "scope-references": [
+                "$XSAPPNAME.SalesUser",
+                "$XSAPPNAME.SalesManager",
+                "$XSAPPNAME.SalesAdmin"
+            ]
+        }
+    ]
+}

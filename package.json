@@ -24,9 +24,38 @@
           "url": "db.sqlite"
         }
       },
+      "auth": {
+        "kind": "mocked",
+        "users": {
+          "user": {
+            "password": "user",
+            "roles": [
+              "AuthenticatedUser",
+              "SalesUser"
+            ]
+          },
+          "manager": {
+            "password": "manager",
+            "roles": [
+              "AuthenticatedUser",
+              "SalesUser",
+              "SalesManager"
+            ]
+          },
+          "admin": {
+            "password": "admin",
+            "roles": [
+              "AuthenticatedUser",
+              "SalesUser",
+              "SalesManager",
+              "SalesAdmin"
+            ]
+          }
+        }
+      },
       "Northwind": {
         "kind": "odata-v2",
-        "credentials":{
+        "credentials": {
           "url": "https://services.odata.org/v2/northwind/northwind.svc/"
         },
         "model": "srv/external/Northwind"

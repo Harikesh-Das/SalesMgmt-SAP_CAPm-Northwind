@@ -5,8 +5,9 @@ using {managed} from '@sap/cds/common';
 /* Custom types */
 
 type SalesUserRole : String enum {
-    manager;
-    user;
+    SalesUser;
+    SalesManager;
+    SalesAdmin;
 }
 
 //---------------------------------------------------------
