@@ -1,7 +1,9 @@
 using {Northwind} from './external/Northwind';
+using {salesmgmt as db} from '../db/schema';
+
 
 /* Custom Types */
-type CustomerSalesData : {
+type CustomerSalesData        : {
     customerId   : String;
     customerName : String(100);
     totalOrders  : Integer;
@@ -9,7 +11,7 @@ type CustomerSalesData : {
     totalSales   : Decimal;
 };
 
-type ProductsSalesData : {
+type ProductsSalesData        : {
     productId     : Integer;
     productName   : String(50);
     totalOrders   : Integer;
@@ -17,12 +19,31 @@ type ProductsSalesData : {
     totalRevenue  : Decimal;
 };
 
+type EmployeeSalesPerformance : {
+    employeeId   : Integer;
+    employeeName : String(50);
+    totalOrders  : Integer;
+    totalItems   : Integer;
+    totalRevenue : Decimal;
+}
+
+type DashboardData            : {
+    employeePerformance : array of EmployeeSalesPerformance;
+    topCustomers        : array of CustomerSalesData;
+    topProducts         : array of ProductsSalesData;
+    
+}
+
 //---------------------------------------------------------------------------------------------------
 
 /* Service Definitions with or w/o custom paths and authentication */
 @path    : 'sales'
 @requires: 'AuthenticatedUser'
 service SalesService {
+
+    /* Entity Projections */
+    entity SalesUser    as projection on db.SalesUser;
+    //-------------------------------------------------------------------------------------------------
 
     // Access Control for Products
     @restrict: [
@@ -154,9 +175,15 @@ service SalesService {
     /* Custom Actions  with authentication*/
 
     @requires: 'SalesManager'
-    action getCustomerSalesSummary(customerId: String) returns CustomerSalesData;
+    action getCustomerSalesSummary(customerId: String)      returns CustomerSalesData;
 
-    @requires:'SalesManager'
-    action getProductSales(productId: Integer)         returns ProductsSalesData;
+    @requires: 'SalesManager'
+    action getProductSales(productId: Integer)              returns ProductsSalesData;
+
+    @requires: 'SalesManager'
+    action getEmployeeSalesPerformance(employeeId: Integer) returns EmployeeSalesPerformance;
+
+    @requires:'AuthenticatedUser'
+    action getDashboard() returns DashboardData;
 
 }

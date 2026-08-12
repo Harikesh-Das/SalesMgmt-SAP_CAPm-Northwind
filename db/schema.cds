@@ -10,14 +10,21 @@ type SalesUserRole : String enum {
     SalesAdmin;
 }
 
+type Username      : String enum {
+    user;
+    manager;
+    admin;
+};
+
+
 //---------------------------------------------------------
 
 /* Entities Declaration */
 
 entity SalesUser : managed {
-    key ID : UUID;
-    name: String(40) not null;
-    email: String(45) not null;
-    role: SalesUserRole not null default 'user'
+    key ID                  : UUID;
+        username            : Username not null default 'user';
+        role                : SalesUserRole not null default 'SalesUser';
+        northwindEmployeeId : Integer;
 
 }
