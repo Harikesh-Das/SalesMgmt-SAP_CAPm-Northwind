@@ -3,7 +3,7 @@ using {salesmgmt as db} from '../db/schema';
 
 
 /* Custom Types */
-type CustomerSalesData        : {
+type CustomerSalesData          : {
     customerId   : String;
     customerName : String(100);
     totalOrders  : Integer;
@@ -11,7 +11,7 @@ type CustomerSalesData        : {
     totalSales   : Decimal;
 };
 
-type ProductsSalesData        : {
+type ProductsSalesData          : {
     productId     : Integer;
     productName   : String(50);
     totalOrders   : Integer;
@@ -19,7 +19,7 @@ type ProductsSalesData        : {
     totalRevenue  : Decimal;
 };
 
-type EmployeeSalesPerformance : {
+type EmployeeSalesPerformance   : {
     employeeId   : Integer;
     employeeName : String(50);
     totalOrders  : Integer;
@@ -27,12 +27,30 @@ type EmployeeSalesPerformance : {
     totalRevenue : Decimal;
 }
 
-type DashboardData            : {
+type DashboardData              : {
     employeePerformance : array of EmployeeSalesPerformance;
     topCustomers        : array of CustomerSalesData;
     topProducts         : array of ProductsSalesData;
-    
+
 }
+
+type SupplierProcurementSummary : {
+    supplierId     : Integer;
+    supplierName   : String(100);
+    totalPurchases : Integer;
+    totalQuantity  : Integer;
+    totalCost      : Decimal(15, 2);
+};
+
+type SupplierPurchaseHistory :{
+    productId:Integer;
+    productName: String(50);
+    quantity:Integer;
+    unitCost: Decimal(10,2);
+    purchaseDate: Date;
+    totalCost: Decimal(15,2)
+};
+
 
 //---------------------------------------------------------------------------------------------------
 
@@ -42,10 +60,22 @@ type DashboardData            : {
 service SalesService {
 
     /* Entity Projections */
-    entity SalesUser    as projection on db.SalesUser;
+
+    entity SalesUser        as projection on db.SalesUser;
+
+    @restrict: [{
+        grant: 'CREATE',
+        to   : [
+            'SalesManager',
+            'SalesAdmin'
+        ]
+    }]
+    entity SupplierPurchase as projection on db.SupplierPurchase;
     //-------------------------------------------------------------------------------------------------
 
-    // Access Control for Products
+    /*  Access Control for Products */
+
+    // Granting CREATE, UPDATE  & DELETE accesses in case of any future developments
     @restrict: [
         {
             grant: 'READ',
@@ -60,7 +90,7 @@ service SalesService {
             to   : 'SalesAdmin'
         }
     ]
-    entity Products     as projection on Northwind.Products;
+    entity Products         as projection on Northwind.Products;
 
     //-----------------------------------------------------------------------------------
 
@@ -79,7 +109,7 @@ service SalesService {
             to   : 'SalesAdmin'
         }
     ]
-    entity Categories   as projection on Northwind.Categories;
+    entity Categories       as projection on Northwind.Categories;
     //-----------------------------------------------------------------------------------
 
     // Access Control for Customers
@@ -97,7 +127,7 @@ service SalesService {
             to   : 'SalesManager'
         }
     ]
-    entity Customers    as projection on Northwind.Customers;
+    entity Customers        as projection on Northwind.Customers;
     //-----------------------------------------------------------------------------------
 
     // Access Control for Orders
@@ -115,7 +145,7 @@ service SalesService {
             to   : 'SalesManager'
         }
     ]
-    entity Orders       as projection on Northwind.Orders;
+    entity Orders           as projection on Northwind.Orders;
     //-----------------------------------------------------------------------------------
 
     // Access Control for OrderDetails
@@ -133,7 +163,7 @@ service SalesService {
             to   : 'SalesManager'
         }
     ]
-    entity OrderDetails as projection on Northwind.Order_Details;
+    entity OrderDetails     as projection on Northwind.Order_Details;
     //-----------------------------------------------------------------------------------
 
     // Access Control for Employees
@@ -151,7 +181,7 @@ service SalesService {
             to   : 'SalesAdmin'
         }
     ]
-    entity Employees    as projection on Northwind.Employees;
+    entity Employees        as projection on Northwind.Employees;
     //-----------------------------------------------------------------------------------
 
     // Access Control for Suppliers
@@ -169,21 +199,50 @@ service SalesService {
             to   : 'SalesAdmin'
         }
     ]
-    entity Suppliers    as projection on Northwind.Suppliers;
+    entity Suppliers        as projection on Northwind.Suppliers;
     //--------------------------------------------------------------------------------------------
 
     /* Custom Actions  with authentication*/
 
     @requires: 'SalesManager'
-    action getCustomerSalesSummary(customerId: String)      returns CustomerSalesData;
+    action getCustomerSalesSummary(customerId: String)        returns CustomerSalesData;
 
     @requires: 'SalesManager'
-    action getProductSales(productId: Integer)              returns ProductsSalesData;
+    action getProductSales(productId: Integer)                returns ProductsSalesData;
 
     @requires: 'SalesManager'
-    action getEmployeeSalesPerformance(employeeId: Integer) returns EmployeeSalesPerformance;
+    action getEmployeeSalesPerformance(employeeId: Integer)   returns EmployeeSalesPerformance;
 
-    @requires:'AuthenticatedUser'
-    action getDashboard() returns DashboardData;
+    @requires: 'AuthenticatedUser'
+    action getDashboard()                                     returns DashboardData;
+
+    @restrict: [{
+        grant: 'EXECUTE',
+        to   : [
+            'SalesManager',
+            'SalesAdmin'
+        ]
+    }]
+    action createSupplierPurchase
+    (supplierId: Integer,productId: Integer,quantity: Integer,unitCost: Decimal(10, 2),purchaseDate: Date)
+            returns SupplierPurchase;
+
+    @restrict: [{
+        grant: 'EXECUTE',
+        to   : [
+            'SalesManager',
+            'SalesAdmin'
+        ]
+    }]
+    action getSupplierProcurementSummary(supplierId: Integer) returns SupplierProcurementSummary;
+
+    @restrict: [{
+        grant: 'EXECUTE',
+        to   : [
+            'SalesManager',
+            'SalesAdmin'
+        ]
+    }]
+    action getSupplierPurchaseHistory(supplierId:Integer) returns SupplierPurchaseHistory;
 
 }

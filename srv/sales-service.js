@@ -1,11 +1,13 @@
 import cds from "@sap/cds";
 
+
+
 /*  Possible Features to add
 1. Employee Sales Performance        Done
 2. Customer Sales Summary               Done
 3. Sales Dashboard                   Done
-4.  getSupplierSalesPerformance(supplierId) next
-5. getTopSuppliers()*/
+4. Supplier Procurement             next
+*/
 
 
 export default cds.service.impl(async function () {
@@ -15,9 +17,14 @@ export default cds.service.impl(async function () {
 
     /* Get the entities from external service and local service */
     const { Products, Customers, Orders, OrderDetails } = this.entities; // From Northwind
-    const { SalesUser } = cds.entities('salesmgmt'); // From schema.cds
+    const { SalesUser, SupplierPurchase } = cds.entities('salesmgmt'); // From schema.cds
     //--------------------------------------------------------------------------------------------------------
 
+    /* Helper Functions */
+    function isValidDate(value) {
+        return !Number.isNaN(new Date(value).getTime());
+    }
+    //---------------------------------------------------------------------------------------------------------
     /* Event Handlers */
 
     // READ requests handler to Northwind
@@ -133,6 +140,9 @@ export default cds.service.impl(async function () {
         const localEmployee = await tx.run(
             SELECT.one.from(SalesUser).where({ northwindEmployeeId: employeeId })
         )
+
+        if (!localEmployee) return req.reject(404, 'Employee not found or employee is not a Northwind employee');
+
 
         // SalesManager can't get performance of SalesAdmin.
         if (localEmployee.role === 'SalesAdmin' && req.user.is('SalesManager') && !req.user.is('SalesAdmin')) {
@@ -291,6 +301,141 @@ export default cds.service.impl(async function () {
     });
     //--------------------------------------------------------------------------------------------------------
 
+    // Create Supplier Purchase Handler
+
+    this.on('createSupplierPurchase', async (req) => {
+
+        const { supplierId, productId, quantity, unitCost, purchaseDate } = req.data;
+
+        const tx = cds.tx(req);
+
+        const supplier = await Northwind.run(
+            SELECT.one.from('Northwind.Suppliers').where({ SupplierID: supplierId })
+        );
+
+        if (!supplier) return req.reject(404, `Supplier ${supplierId} not found`);
+
+        const product = await Northwind.run(
+            SELECT.one.from("Northwind.Products").where({ ProductID: productId }),
+        );
+
+        if (!product) return req.reject(404, `Product ${productId} not found`);
+
+        const validProductSupplier = await Northwind.run(
+            SELECT.one.from('Northwind.Products').where({ ProductID: product.ProductID, SupplierID: supplier.SupplierID })
+        );
+
+        if (!validProductSupplier) {
+            return req.reject(404, `Product: ${productId} doesn't belong to the supplier: ${supplier.CompanyName} , ID:${supplierId}`);
+        }
+
+        if (quantity <= 0 || unitCost <= 0) return req.reject(400, 'Quantity and unit cost must be positive');
+
+        if (!isValidDate(purchaseDate)) return req.reject(400, 'Invalid Date');
 
 
+        return await tx.run(
+            INSERT.into(SupplierPurchase).entries({
+                supplierId: supplier.SupplierID,
+                productId: product.ProductID,
+                quantity: quantity,
+                unitCost: unitCost,
+                purchaseDate: purchaseDate
+            })
+        )
+    });
+    //-----------------------------------------------------------------------------------------------------------------------------------
+
+    /* Supplier Procurement Summary Handler */
+    this.on('getSupplierProcurementSummary', async (req) => {
+
+        const { supplierId } = req.data;
+
+        const tx = cds.tx(req);
+
+
+        const supplier = await Northwind.run(
+            SELECT.one.from('Northwind.Suppliers').where({ SupplierID: supplierId })
+        );
+
+        if (!supplier) return req.reject(404, `Supplier ${supplierId} not found`);
+
+        const purchases = await tx.run(
+            SELECT.from(SupplierPurchase).where({ supplierId: supplierId })
+        );
+
+        if (purchases.length === 0) {
+            return {
+                supplierId: supplier.SupplierID,
+                supplierName: supplier.CompanyName,
+                totalPurchases: 0,
+                totalQuantity: 0,
+                totalCost: 0
+            };
+        }
+
+        let totalQuantity = 0;
+        let totalCost = 0;
+
+        for (const purchase of purchases) {
+            totalQuantity += purchase.quantity;
+            totalCost += purchase.quantity * purchase.unitCost;
+        }
+
+        return {
+            supplierId: supplier.SupplierID,
+            supplierName: supplier.CompanyName,
+            totalPurchases: purchases.length,
+            totalQuantity: totalQuantity,
+            totalCost: totalCost
+        };
+    });
+    //--------------------------------------------------------------------------------------------------------
+
+    /* Supplier Purchase History */
+    this.on('getSupplierPurchaseHistory', async (req) => {
+
+        const { supplierId } = req.data;
+
+        const tx = cds.tx(req);
+
+        const supplier = await Northwind.run(
+            SELECT.one.from('Northwind.Suppliers').where({ SupplierID: supplierId })
+        );
+
+        if (!supplier) return req.reject(404, `Supplier ${supplierId} not found`);
+
+        const purchases = await tx.run(
+            SELECT.from(SupplierPurchase)
+                .where({ supplierId: supplier.SupplierID })
+        );
+
+        if (purchases.length === 0) {
+            return [];
+        }
+
+        const productIds = purchases.map(purchase => purchase.productId);
+
+        const products = await Northwind.run(
+            SELECT.from('Northwind.Products')
+                .where({ ProductID: { in: productIds } })
+        );
+
+        const productMap = new Map(
+            products.map(product => [product.ProductID, product.ProductName])
+        );
+
+        const history = purchases.map(purchase => ({
+            productId: purchase.productId,
+            productName: productMap.get(purchase.productId),
+            quantity: purchase.quantity,
+            unitCost: purchase.unitCost,
+            purchaseDate: purchase.purchaseDate,
+            totalCost: purchase.quantity * purchase.unitCost
+        }));
+
+        return history; 
+
+
+    })
 });

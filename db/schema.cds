@@ -28,3 +28,12 @@ entity SalesUser : managed {
         northwindEmployeeId : Integer;
 
 }
+
+entity SupplierPurchase : managed {
+    key ID: UUID;
+    supplierId: Integer;
+    productId: Integer;
+    quantity: Integer;
+    unitCost: Decimal (10,2);
+    purchaseDate: Date;
+}
